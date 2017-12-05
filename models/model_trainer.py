@@ -42,7 +42,7 @@ class ModelTrainer(object):
 
     def print_stats(self, loss):
         # print("avg loss\t" + self.my_round(loss))
-        print("avg loss\t" + str(loss.data.numpy()))
+        print("avg loss:\t" + str(loss.data.numpy()[0]))
 
     def logs(self, n_batches, train_avg_loss, valid_avg_loss, t_confusion, v_confusion, model_saved):
         self.LOGS.write("\t" + str(n_batches) + "\t")
@@ -140,7 +140,7 @@ class ModelTrainer(object):
 
         class_acc = total_correct / float(total_pred)
 
-        print "class_acc: " + str(class_acc)
+        print "class_acc:\t" + str(class_acc)
 
         return stage_loss/n_batches, class_acc
 
@@ -202,7 +202,7 @@ class ModelTrainer(object):
             while epoch < self.FLAGS.max_epochs:
                 epoch += 1
                 print("===========================EPOCH %d=============================" % epoch)
-                n_stages_not_converging, n_stages = self.run_epoch(n_stages_not_converging, n_stages, best_dev_err)
+                n_stages_not_converging, n_stages, best_dev_err = self.run_epoch(n_stages_not_converging, n_stages, best_dev_err)
         except NotConvergingError:
             # TODO: update
             self.model.load_state_dict(torch.load(self.OUTPUT_PATH))

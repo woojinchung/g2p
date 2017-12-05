@@ -209,6 +209,8 @@ class ModelTrainer(object):
             print("=====================TEST==================")
             test_loss = self.run_stage(cdu.CorpusEpoch(self.dm.test_pairs, self.dm), False, 1, 1)
 #            self.LOGS.write("accuracy\t" + self.my_round(test_confusion.accuracy()) + "\n")
+        except KeyboardInterrupt:
+            print "\nSO LONG, AND THANKS FOR ALL THE FISH"
         finally:
             self.LOGS.close()
 

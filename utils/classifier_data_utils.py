@@ -9,7 +9,7 @@ import io
 
 
 class CorpusEpoch:
-    def __init__(self, data_pairs, data_manager, batch_size=8):
+    def __init__(self, data_pairs, data_manager, batch_size=4):
         self.batch_size = batch_size
         self.data_manager = data_manager
         self.n_lines = len(data_pairs[0])
@@ -29,8 +29,8 @@ class CorpusEpoch:
             source = self.data_pairs[0].pop()
             target = self.data_pairs[1].pop()
 
-            source_emb = torch.index_select(self.data_manager.emb, 0, torch.LongTensor(source))
-            source_batch_list.append(source_emb)
+            source_emb = self.data_manager.emb(Variable(torch.LongTensor([source])))
+            source_batch_list.append(source_emb.squeeze())
 
             labels = Variable(torch.LongTensor(target))
             labels_list.append(labels)
@@ -75,15 +75,9 @@ class DataManager:
         self.training_pairs = None
         self.valid_pairs = None
         self.test_pairs = None
-        self.emb = None
+        self.emb = torch.nn.Embedding(44, embedding_size)
 
         self.preprocess_data()
-        self.build_embedding()
-
-    def build_embedding(self):
-        i = torch.LongTensor([range(self.input_lang.n_symbols), range(self.input_lang.n_symbols)])
-        v  = torch.ones(self.input_lang.n_symbols)
-        self.emb = torch.sparse.FloatTensor(i, v, torch.Size([self.input_lang.n_symbols, self.input_lang.n_symbols])).to_dense()
 
     def preprocess_data(self):
         train_pairs = self.read_dict(self.training)

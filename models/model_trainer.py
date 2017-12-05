@@ -7,17 +7,13 @@ import torch.nn.functional as F
 import math
 
 class ModelTrainer(object):
-    def __init__(self, FLAGS, model):
+    def __init__(self, FLAGS, model, optimizer):
         self.FLAGS = FLAGS
         self.model = model
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.FLAGS.learning_rate)  # or use RMSProp
+        self.optimizer = optimizer
         self.dm = cdu.DataManager(self.FLAGS.data_dir, self.FLAGS.embedding_size)
         self.loss = torch.nn.CrossEntropyLoss()
-        if self.FLAGS.gpu:
-            self.model = self.model.cuda()
-        now = datetime.now()
-        # self.time_stamp = "%d-%d_%d-%d-%d_%d" % (now.month, now.day, now.hour, now.minute, now.second, now.microsecond)
-        self.OUTPUT_PATH = FLAGS.ckpt_path + FLAGS.experiment_name
+        self.OUTPUT_PATH = FLAGS.ckpt_path + "/" + FLAGS.experiment_name + ".ckpt"
         self.LOGS_PATH = FLAGS.log_path + "LOGS-" + FLAGS.experiment_name
         self.OUT_LOGS_PATH = FLAGS.log_path + "OUTPUTS-" + FLAGS.experiment_name
         self.LOGS = open(self.LOGS_PATH, "a")
@@ -142,12 +138,14 @@ class ModelTrainer(object):
         if prints_per_stage > 1:
             self.print_stats(stage_loss/n_batches)
 
-        print "class_acc: " + str(total_correct / float(total_pred))
+        class_acc = total_correct / float(total_pred)
 
-        return stage_loss/n_batches
+        print "class_acc: " + str(class_acc)
+
+        return stage_loss/n_batches, class_acc
 
 
-    def run_epoch(self, n_stages_not_converging, n_stages):
+    def run_epoch(self, n_stages_not_converging, n_stages, best_dev_err):
         train = cdu.CorpusEpoch(self.dm.training_pairs, self.dm)
         valid = cdu.CorpusEpoch(self.dm.valid_pairs, self.dm)
         for _ in range(self.FLAGS.stages_per_epoch):
@@ -155,20 +153,32 @@ class ModelTrainer(object):
                 raise NotConvergingError
             n_stages += 1
             print("-------------training-------------")
-            train_loss = self.run_stage(train, True, self.FLAGS.stages_per_epoch, self.FLAGS.prints_per_stage)
+            train_loss, train_acc = self.run_stage(train, True, self.FLAGS.stages_per_epoch, self.FLAGS.prints_per_stage)
             print("-------------validation-------------")
-            valid_loss = self.run_stage(valid, False, self.FLAGS.stages_per_epoch, 1)
-            # TODO: redefine condition
-#            if valid_confusion.matthews() > max_matthews:
-#                max_matthews = valid_confusion.matthews()
-#                n_stages_not_converging = 0
-#                torch.save(self.model.state_dict(), self.OUTPUT_PATH)
-#                print("MODEL SAVED")
-#                self.cluster_logs(n_stages, train_loss, valid_loss, train_confusion, valid_confusion, True)
-#            else:
-#                n_stages_not_converging += 1
-#                self.cluster_logs(n_stages, train_loss, valid_loss, train_confusion, valid_confusion, False)
-        return n_stages_not_converging, n_stages
+            valid_loss, valid_acc = self.run_stage(valid, False, self.FLAGS.stages_per_epoch, 1)
+
+            if (1 - valid_acc) < 0.99 * best_dev_err and n_stages > 10:
+                best_dev_err = 1 - valid_acc
+                if self.FLAGS.gpu:
+                    recursively_set_device(self.model.state_dict(), gpu=-1)
+                    recursively_set_device(self.optimizer.state_dict(), gpu=-1)
+
+                n_stages_not_converging = 0
+                torch.save({
+                    'model_state_dict': self.model.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict(),
+                    'stages': n_stages,
+                    'best_dev_error': best_dev_err,}, self.OUTPUT_PATH)
+
+                if self.FLAGS.gpu:
+                    recursively_set_device(self.model.state_dict(), gpu=0)
+                    recursively_set_device(self.optimizer.state_dict(), gpu=0)
+
+                print "Checkpointing with new best dev accuracy of " + str(valid_acc)
+            else:
+                n_stages_not_converging += 1
+
+        return n_stages_not_converging, n_stages, valid_acc
 
     def start_up_print_and_logs(self):
         print("======================================================================")
@@ -182,18 +192,19 @@ class ModelTrainer(object):
         self.LOGS.flush()
 
 
-    def run(self):
+    def run(self, stages, best_dev_err):
         """The outer loop of the model trainer"""
         self.start_up_print_and_logs()
         epoch = 0
-        n_stages = 0
+        n_stages = stages
         n_stages_not_converging = 0
         try:
             while epoch < self.FLAGS.max_epochs:
                 epoch += 1
                 print("===========================EPOCH %d=============================" % epoch)
-                n_stages_not_converging, n_stages = self.run_epoch(n_stages_not_converging, n_stages)
+                n_stages_not_converging, n_stages = self.run_epoch(n_stages_not_converging, n_stages, best_dev_err)
         except NotConvergingError:
+            # TODO: update
             self.model.load_state_dict(torch.load(self.OUTPUT_PATH))
             print("=====================TEST==================")
             test_loss = self.run_stage(cdu.CorpusEpoch(self.dm.test_pairs, self.dm), False, 1, 1)
@@ -208,3 +219,14 @@ class NotConvergingError(Exception):
 
     def __str__(self):
         return repr(self.value)
+
+def recursively_set_device(inp, gpu=-1):
+    if hasattr(inp, 'keys'):
+        for k in inp.keys():
+            inp[k] = recursively_set_device(inp[k], gpu)
+    elif hasattr(inp, 'cpu'):
+        if gpu >= 0:
+            inp = inp.cuda()
+        else:
+            inp = inp.cpu()
+    return inp

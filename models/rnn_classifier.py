@@ -67,9 +67,10 @@ class Classifier(nn.Module):
 class RNNTrainer(model_trainer.ModelTrainer):
     def __init__(self,
                  FLAGS,
-                 model):
+                 model,
+                 optimizer):
         self.FLAGS = FLAGS
-        super(RNNTrainer, self).__init__(FLAGS, model)
+        super(RNNTrainer, self).__init__(FLAGS, model, optimizer)
 
 
     def to_string(self):

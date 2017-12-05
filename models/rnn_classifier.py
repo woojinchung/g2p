@@ -58,7 +58,7 @@ class Classifier(nn.Module):
         return Variable(torch.zeros(self.num_layers, batch_size, self.hidden_size))
 
     def to_string(self):
-        return "input size\t\t" + str("self.embedding_size") + "\n" + \
+        return "input size\t\t" + str(self.embedding_size) + "\n" + \
             "hidden size\t\t" + str(self.hidden_size) + "\n" + \
             "reduction size\t\t" + str(self.reduction_size) + "\n" + \
             "num layers\t\t" + str(self.num_layers) + "\n"

@@ -36,22 +36,6 @@ class ModelTrainer(object):
         loss.backward()
         self.optimizer.step()
 
-    def batch_confusion(self, outputs, output_targets):
-        if self.FLAGS.gpu:
-            outputs = outputs.cpu()
-            output_targets = output_targets.cpu()
-        tp, fp, tn, fn = 0, 0, 0, 0
-        for out, target in zip(outputs, output_targets):
-            if out.data[0] > .5 and target > .5:
-                tp += 1
-            if out.data[0] > .5 and target < .5:
-                fp += 1
-            if out.data[0] < .5 and target < .5:
-                tn += 1
-            if out.data[0] < .5 and target > .5:
-                fn += 1
-        return Confusion(tp, fp, tn, fn)
-
     def print_min_and_max(self, outputs, batch):
         max_prob, max_i_sentence = torch.topk(outputs.data, 1, 0)
         min_prob, min_i_sentence = torch.topk(outputs.data * -1, 1, 0)
@@ -117,7 +101,7 @@ class ModelTrainer(object):
         if self.FLAGS.gpu:
             input = source_batch[0].cuda()
         else:
-            input = source_batch[0].cuda()
+            input = source_batch[0].cpu()
 
         outputs_list = self.model.forward(input, source_batch[1])
         loss, correct, preds = self.get_metrics(outputs_list, labels_list)

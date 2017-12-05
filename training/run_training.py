@@ -29,6 +29,7 @@ if __name__ == '__main__':
 
         optimizer = torch.optim.Adam(cl.parameters(), lr=FLAGS.learning_rate)
 
+        epochs = 0
         stages = 0
         best_dev_error = 1.
 
@@ -37,6 +38,7 @@ if __name__ == '__main__':
             
             cl.load_state_dict(checkpoint['model_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            epochs = checkpoint['epochs']
             stages = checkpoint['stages']
             best_dev_error = checkpoint['best_dev_error']
 
@@ -48,4 +50,4 @@ if __name__ == '__main__':
             FLAGS,
             model=cl,
             optimizer=optimizer)
-        clt.run(stages, best_dev_error)
+        clt.run(epochs, stages, best_dev_error)

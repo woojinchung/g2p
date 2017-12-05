@@ -25,10 +25,10 @@ def get_flags():
                           1,
                           "how often to print stats to stdout during epoch")
     gflags.DEFINE_integer("convergence_threshold",
-                          500,
+                          50,
                           "how many eval steps before early stop")
     gflags.DEFINE_integer("max_epochs",
-                          10,
+                          100,
                           "number of epochs before stop, essentially unreachable")
     gflags.DEFINE_integer("batch_size", 64, "")
 

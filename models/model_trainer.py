@@ -145,7 +145,7 @@ class ModelTrainer(object):
         return stage_loss/n_batches, class_acc
 
 
-    def run_epoch(self, n_stages_not_converging, n_stages, best_dev_err):
+    def run_epoch(self, n_stages_not_converging, epochs, n_stages, best_dev_err):
         train = cdu.CorpusEpoch(self.dm.training_pairs, self.dm)
         valid = cdu.CorpusEpoch(self.dm.valid_pairs, self.dm)
         for _ in range(self.FLAGS.stages_per_epoch):
@@ -167,6 +167,7 @@ class ModelTrainer(object):
                 torch.save({
                     'model_state_dict': self.model.state_dict(),
                     'optimizer_state_dict': self.optimizer.state_dict(),
+                    'epochs': epochs,
                     'stages': n_stages,
                     'best_dev_error': best_dev_err,}, self.OUTPUT_PATH)
 
@@ -192,17 +193,17 @@ class ModelTrainer(object):
         self.LOGS.flush()
 
 
-    def run(self, stages, best_dev_err):
+    def run(self, epochs, stages, best_dev_err):
         """The outer loop of the model trainer"""
         self.start_up_print_and_logs()
-        epoch = 0
+        n_epoch = epochs
         n_stages = stages
         n_stages_not_converging = 0
         try:
-            while epoch < self.FLAGS.max_epochs:
-                epoch += 1
-                print("===========================EPOCH %d=============================" % epoch)
-                n_stages_not_converging, n_stages, best_dev_err = self.run_epoch(n_stages_not_converging, n_stages, best_dev_err)
+            while n_epoch < self.FLAGS.max_epochs:
+                print("===========================EPOCH %d=============================" % n_epoch)
+                n_stages_not_converging, n_stages, best_dev_err = self.run_epoch(n_stages_not_converging, n_epoch, n_stages, best_dev_err)
+                n_epoch += 1
         except NotConvergingError:
             # TODO: update
             self.model.load_state_dict(torch.load(self.OUTPUT_PATH))

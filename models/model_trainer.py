@@ -112,7 +112,7 @@ class ModelTrainer(object):
     def run_stage(self, epoch, backprop, stages_per_epoch, prints_per_stage):
         has_next = True
         n_batches = 0
-        stage_batches = max(int(math.ceil(epoch.n_batches/stages_per_epoch)), 1)
+        stage_batches = math.ceil(epoch.n_batches/stages_per_epoch)
         print_batches = int(math.ceil(stage_batches/prints_per_stage))
 
         print_loss = 0

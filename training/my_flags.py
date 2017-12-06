@@ -19,7 +19,7 @@ def get_flags():
 
     #chunks
     gflags.DEFINE_integer("stages_per_epoch",
-                          100,
+                          40,
                           "how many eval/stats steps per epoch?")
     gflags.DEFINE_integer("prints_per_stage",
                           1,

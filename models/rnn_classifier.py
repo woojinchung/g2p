@@ -6,6 +6,7 @@ import gflags
 from torch.autograd import Variable
 from models import model_trainer
 import torch.nn.functional as F
+import math
 
 # EVALUATE_EVERY = 1000
 #

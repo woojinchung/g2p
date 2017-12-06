@@ -7,7 +7,7 @@ def get_flags():
                          "dir containing train.txt, test.txt, valid.txt")
     gflags.DEFINE_string("log_path", "logs", "")
     gflags.DEFINE_string("data_type", "discriminator", "figure out how to use this")
-    gflags.DEFINE_enum("model_type", "LSTM", ["LSTM", "BiLSTM", "DEEP"], "options: LSTM, BiLSTM, ...")
+    gflags.DEFINE_enum("model_type", "LSTM", ["LSTM", "BiLSTM", "DEEP", "ENC_DEC", "ATTN"], "options: LSTM, BiLSTM, ...")
     gflags.DEFINE_string("ckpt_path", "checkpoints", "")
     gflags.DEFINE_boolean("gpu", False, "set to false on local")
     gflags.DEFINE_string("experiment_name", "", "")

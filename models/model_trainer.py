@@ -112,7 +112,7 @@ class ModelTrainer(object):
     def run_stage(self, epoch, backprop, stages_per_epoch, prints_per_stage):
         has_next = True
         n_batches = 0
-        stage_batches = int(math.ceil(epoch.n_batches/stages_per_epoch))
+        stage_batches = max(int(math.ceil(epoch.n_batches/stages_per_epoch)), 1)
         print_batches = int(math.ceil(stage_batches/prints_per_stage))
 
         print_loss = 0
@@ -146,11 +146,11 @@ class ModelTrainer(object):
 
 
     def run_epoch(self, n_stages_not_converging, epochs, n_stages, best_dev_err):
-        train = cdu.CorpusEpoch(self.dm.training_pairs, self.dm)
-        valid = cdu.CorpusEpoch(self.dm.valid_pairs, self.dm)
+        train = cdu.CorpusEpoch(self.dm.training_pairs, self.dm, self.FLAGS.batch_size)
+        valid = cdu.CorpusEpoch(self.dm.valid_pairs, self.dm, self.FLAGS.batch_size)
         for _ in range(self.FLAGS.stages_per_epoch):
-            if n_stages_not_converging > self.FLAGS.convergence_threshold:
-                raise NotConvergingError
+            # if n_stages_not_converging > self.FLAGS.convergence_threshold:
+            #     raise NotConvergingError
             n_stages += 1
             print("-------------training-------------")
             train_loss, train_acc = self.run_stage(train, True, self.FLAGS.stages_per_epoch, self.FLAGS.prints_per_stage)

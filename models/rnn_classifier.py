@@ -27,14 +27,14 @@ def time_since(since):
 START_TIME = time.time()
 
 class Classifier(nn.Module):
-    def __init__(self, hidden_size, embedding_size, reduction_size, num_layers):
+    def __init__(self, hidden_size, embedding_size, reduction_size, num_layers, biLSTM):
         super(Classifier, self).__init__()
         self.hidden_size = hidden_size
         self.embedding_size = embedding_size
         self.num_layers = num_layers
         self.reduction_size = reduction_size
-        self.ih2h = nn.LSTM(embedding_size, hidden_size, num_layers=num_layers, bidirectional=False)
-        self.h2r = nn.Linear(hidden_size, reduction_size)
+        self.ih2h = nn.LSTM(embedding_size, hidden_size, num_layers=num_layers, bidirectional=biLSTM)
+        self.h2r = nn.Linear(hidden_size * 2 if biLSTM else hidden_size, reduction_size)
 
     def forward(self, input, input_lengths):
         batch_size = len(input)

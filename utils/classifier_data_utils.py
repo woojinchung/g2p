@@ -9,7 +9,7 @@ import io
 
 
 class CorpusEpoch:
-    def __init__(self, data_pairs, data_manager, batch_size=4):
+    def __init__(self, data_pairs, data_manager, batch_size=64):
         self.batch_size = batch_size
         self.data_manager = data_manager
         self.n_lines = len(data_pairs[0])

@@ -179,7 +179,7 @@ class ModelTrainer(object):
             else:
                 n_stages_not_converging += 1
 
-        return n_stages_not_converging, n_stages, valid_acc
+        return n_stages_not_converging, n_stages, best_dev_err
 
     def start_up_print_and_logs(self):
         print("======================================================================")

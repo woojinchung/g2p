@@ -28,14 +28,14 @@ def time_since(since):
 START_TIME = time.time()
 
 class Classifier(nn.Module):
-    def __init__(self, hidden_size, embedding_size, reduction_size, num_layers):
+    def __init__(self, hidden_size, embedding_size, reduction_size, num_layers, biLSTM):
         super(Classifier, self).__init__()
         self.hidden_size = hidden_size
         self.embedding_size = embedding_size
         self.num_layers = num_layers
         self.reduction_size = reduction_size
-        self.ih2h = nn.LSTM(embedding_size, hidden_size, num_layers=num_layers, bidirectional=False)
-        self.h2r = nn.Linear(hidden_size, reduction_size)
+        self.ih2h = nn.LSTM(embedding_size, hidden_size, num_layers=num_layers, bidirectional=biLSTM)
+        self.h2r = nn.Linear(hidden_size * 2 if biLSTM else hidden_size, reduction_size)
 
     def forward(self, input, input_lengths):
         batch_size = len(input)
@@ -64,6 +64,55 @@ class Classifier(nn.Module):
             "reduction size\t\t" + str(self.reduction_size) + "\n" + \
             "num layers\t\t" + str(self.num_layers) + "\n"
 
+
+class DeepClassifier(nn.Module):
+    def __init__(self, hidden_size, embedding_size, reduction_size, num_layers):
+        super(DeepClassifier, self).__init__()
+        self.hidden_size = hidden_size
+        self.embedding_size = embedding_size
+        self.num_layers = num_layers
+        self.reduction_size = reduction_size
+        self.lstm = nn.LSTM(embedding_size, hidden_size/2, num_layers=num_layers, bidirectional=False)
+        self.bilstm = nn.LSTM(embedding_size, hidden_size/4, num_layers=num_layers, bidirectional=True)
+        self.deeplstm = nn.LSTM(hidden_size, hidden_size, num_layers=num_layers, bidirectional=False)
+        self.h2r = nn.Linear(hidden_size, reduction_size)
+
+    def forward(self, input, input_lengths):
+        batch_size = len(input)
+        packed_inputs = torch.nn.utils.rnn.pack_padded_sequence(input, input_lengths, batch_first=True)
+
+        packed_lstm_outputs, _ = self.lstm(packed_inputs)
+        packed_bilstm_outputs, _ = self.bilstm(packed_inputs)
+
+        # merge two intermediate outputs
+        lstm_outputs, lstm_lengths = torch.nn.utils.rnn.pad_packed_sequence(packed_lstm_outputs, batch_first=True)
+        bilstm_outputs, bilstm_lengths = torch.nn.utils.rnn.pad_packed_sequence(packed_bilstm_outputs, batch_first=True)
+        merged = torch.cat((lstm_outputs, bilstm_outputs), 2)
+        packed_merged = torch.nn.utils.rnn.pack_padded_sequence(merged, lstm_lengths, batch_first=True)
+
+        packed_deeplstm_outputs, deeplstm_lengths = self.deeplstm(packed_merged)
+        deeplstm_outputs, deeplstm_lengths = torch.nn.utils.rnn.pad_packed_sequence(packed_deeplstm_outputs, batch_first=True)
+
+        tmp = torch.chunk(deeplstm_outputs, batch_size, 0)
+        tmp = torch.cat(tmp, 1).squeeze()
+        tmp = F.sigmoid(self.h2r(tmp))
+        tmp = tmp.view(batch_size, -1, self.reduction_size)
+
+        # trim output
+        trimmed_outputs = []
+        for i, output in enumerate(tmp):
+            trimmed_outputs.append(output[:deeplstm_lengths[i], :].cpu())
+
+        return trimmed_outputs
+
+    def init_hidden(self, batch_size):
+        return Variable(torch.zeros(self.num_layers, batch_size, self.hidden_size))
+
+    def to_string(self):
+        return "input size\t\t" + str(self.embedding_size) + "\n" + \
+            "hidden size\t\t" + str(self.hidden_size) + "\n" + \
+            "reduction size\t\t" + str(self.reduction_size) + "\n" + \
+            "num layers\t\t" + str(self.num_layers) + "\n"
 
 class RNNTrainer(model_trainer.ModelTrainer):
     def __init__(self,

@@ -23,8 +23,25 @@ if __name__ == '__main__':
             hidden_size=FLAGS.hidden_size,
             embedding_size=FLAGS.embedding_size,
             reduction_size=FLAGS.reduction_size,
+            num_layers=FLAGS.num_layers,
+            biLSTM=False)
+    elif FLAGS.model_type == "BiLSTM":
+        cl = models.rnn_classifier.Classifier(
+            hidden_size=FLAGS.hidden_size,
+            embedding_size=FLAGS.embedding_size,
+            reduction_size=FLAGS.reduction_size,
+            num_layers=FLAGS.num_layers,
+            biLSTM=True)
+    elif FLAGS.model_type == "DEEP":
+        cl = models.rnn_classifier.DeepClassifier(
+            hidden_size=FLAGS.hidden_size,
+            embedding_size=FLAGS.embedding_size,
+            reduction_size=FLAGS.reduction_size,
             num_layers=FLAGS.num_layers)
+    else:
+        pass
 
+    if cl is not None:
         if FLAGS.gpu:
             cl = cl.cuda()
 

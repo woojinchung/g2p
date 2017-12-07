@@ -144,10 +144,9 @@ class ModelTrainer(object):
 
         return stage_loss/n_batches, class_acc
 
-
     def run_epoch(self, n_stages_not_converging, epochs, n_stages, best_dev_err):
         train = cdu.CorpusEpoch(self.dm.training_pairs, self.dm, self.FLAGS.batch_size)
-        valid = cdu.CorpusEpoch(self.dm.valid_pairs, self.dm, self.FLAGS.batch_size)
+
         for _ in range(self.FLAGS.stages_per_epoch):
             # if n_stages_not_converging > self.FLAGS.convergence_threshold:
             #     raise NotConvergingError
@@ -155,7 +154,8 @@ class ModelTrainer(object):
             print("-------------training-------------")
             train_loss, train_acc = self.run_stage(train, True, self.FLAGS.stages_per_epoch, self.FLAGS.prints_per_stage)
             print("-------------validation-------------")
-            valid_loss, valid_acc = self.run_stage(valid, False, self.FLAGS.stages_per_epoch, 1)
+            valid = cdu.CorpusEpoch(self.dm.valid_pairs, self.dm, self.FLAGS.batch_size)
+            valid_loss, valid_acc = self.evaluate(valid)
 
             if (1 - valid_acc) < 0.99 * best_dev_err and n_stages > 10:
                 best_dev_err = 1 - valid_acc
@@ -180,6 +180,28 @@ class ModelTrainer(object):
                 n_stages_not_converging += 1
 
         return n_stages_not_converging, n_stages, best_dev_err
+
+    def evaluate(self, epoch):
+        has_next = True
+        total_loss = 0
+        total_correct = 0
+        total_pred = 0
+
+        while has_next:
+            source_batch, target_batch, has_next = epoch.get_new_batch()
+            loss, correct, preds = self.run_batch(source_batch, target_batch, False)
+            
+            total_loss += loss
+            total_correct += correct
+            total_pred += preds
+
+        class_acc = total_correct / float(total_pred)
+        avg_loss = total_loss/epoch.n_batches
+
+        self.print_stats(avg_loss)
+        print "class_acc:\t" + str(class_acc)
+
+        return avg_loss, class_acc        
 
     def start_up_print_and_logs(self):
         print("======================================================================")

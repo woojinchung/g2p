@@ -58,7 +58,7 @@ class CorpusEpoch:
             for j in range(length):
                 source_batch[i, j] = source_batch_list[i][j]
 
-        has_next = len(self.data_pairs) > 0
+        has_next = len(self.data_pairs[0]) > 0
 
         return tuple((source_batch, lengths)), labels_list, has_next
 

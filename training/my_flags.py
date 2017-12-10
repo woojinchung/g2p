@@ -11,6 +11,7 @@ def get_flags():
     gflags.DEFINE_string("ckpt_path", "checkpoints", "")
     gflags.DEFINE_boolean("gpu", False, "set to false on local")
     gflags.DEFINE_string("experiment_name", "", "")
+    gflags.DEFINE_boolean("evaluate_only", False, "")
 
     #sizes
     gflags.DEFINE_integer("embedding_size", 44, "hardcoded for simplicity")

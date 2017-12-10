@@ -62,8 +62,10 @@ if __name__ == '__main__':
 
             print "Resuming at stage: {} with best dev accuracy: {}".format(stages, 1. - best_dev_error)
         except IOError:
-            pass
-        
+            if FLAGS.evaluate_only is True:
+                print "Cannot open {}. Terminating...".format(FLAGS.experiment_name)
+                sys.exit()
+
         clt = models.rnn_classifier.RNNTrainer(
             FLAGS,
             model=cl,

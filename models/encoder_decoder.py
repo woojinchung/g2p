@@ -7,11 +7,7 @@ from torch.autograd import Variable
 from models import model_trainer
 import torch.nn.functional as F
 import math
-
-# EVALUATE_EVERY = 1000
-#
-# LOGS = open("logs/rnn-logs", "a")
-# OUTPUT_PATH = "models/rnn_classifier"
+import utils.enc_dec_data_utils as cdu
 
 
 
@@ -28,80 +24,48 @@ def time_since(since):
 START_TIME = time.time()
 
 class EncoderDecoder(nn.Module):
-    def __init__(self, hidden_size, embedding_size, output_size, num_layers):
+    def __init__(self, hidden_size, embedding_size, output_size, num_layers, out_seq_len):
         super(EncoderDecoder, self).__init__()
         self.hidden_size = hidden_size
         self.embedding_size = embedding_size
         self.output_size = output_size
         self.num_layers = num_layers
+        self.out_seq_len = out_seq_len
         self.encoder = nn.LSTM(embedding_size, hidden_size, num_layers=num_layers, bidirectional=True)
         self.decoder = nn.LSTMCell(2*hidden_size + output_size, hidden_size)
         self.h2o = nn.Linear(hidden_size, output_size)
 
     def forward_training(self, input, labels):
         batch_size = len(input)
+        input = torch.transpose(input, 0, 1)
         encoding, _ = self.encoder(input)
-        encoding = F.sigmoid(encoding)
-        encoding = torch.transpose(encoding, 0, 1)
         (h, c) = self.init_hidden_decoder(batch_size)[0]
-        outputs = []
-        for i, y in enumerate(labels):
+        outputs = [labels[0]]
+        for i, y in enumerate(labels[0:-1]):
             tmp = torch.cat([encoding[i], y], 1)
             h, c = self.decoder(tmp, (h, c))
             output = F.softmax(self.h2o(h))
             outputs.append(output)
         return outputs
-        # reshape output
-        # tmp = Variable(torch.zeros(len(outputs), batch_size, self.output_size))
-        # for i in range(len(outputs)):
-        #     tmp[i] = outputs[i]
-        # # tmp = torch.transpose(tmp, 0, 1)
-        # return tmp
-
-        # trim output
-        # tmp = Variable(torch.zeros(len(outputs), batch_size, self.output_size))
-        # for i in range(len(outputs)):
-        #     tmp[i] = outputs[i]
-        # tmp = torch.transpose(tmp, 0, 1)
-        # trimmed_outputs = []
-        # for i, outputs in enumerate(tmp):
-        #     trimmed_outputs.append(outputs[:lengths[i], :].cpu())
-        # return trimmed_outputs
 
     def forward_eval(self, input):
         batch_size = len(input)
+        input = torch.transpose(input, 0, 1)
         encoding, _ = self.encoder(input)
-        encoding = F.sigmoid(encoding)
-        encoding = torch.transpose(encoding, 0, 1)
         (h, c) = self.init_hidden_decoder(batch_size)[0]
         outputs = []
         y = Variable(torch.zeros(batch_size, self.output_size))
         for i in range(batch_size):
             y[i, 0] = 1
-        for i in range(input.size()[1]):
+        outputs.append(y)
+        for i in range(self.out_seq_len-1):
             tmp = torch.cat([encoding[i], y], 1)
             h, c = self.decoder(tmp, (h, c))
             output = F.softmax(self.h2o(h))
             outputs.append(output)
             y = output
-        # return outputs
-        # reshape output
-        tmp = Variable(torch.zeros(len(outputs), batch_size, self.output_size))
-        for i in range(len(outputs)):
-            tmp[i] = outputs[i]
-        # tmp = torch.transpose(tmp, 0, 1)
-        return tmp
+        return outputs
 
-        # trim output
-        # tmp = Variable(torch.zeros(len(outputs), batch_size, self.output_size))
-        # for i in range(len(outputs)):
-        #     tmp[i] = outputs[i]
-        # tmp = torch.transpose(tmp, 0, 1)
-        # trimmed_outputs = []
-        # for i, outputs in enumerate(tmp):
-        #     trimmed_outputs.append(outputs[:lengths[i], :].cpu())
-        #
-        # return trimmed_outputs
 
     def init_hidden(self, batch_size):
         return Variable(torch.zeros(self.num_layers, batch_size, self.hidden_size))
@@ -126,43 +90,77 @@ class EDTrainer(model_trainer.ModelTrainer):
                  model,
                  optimizer):
         self.FLAGS = FLAGS
-        super(EDTrainer, self).__init__(FLAGS, model, optimizer)
+        self.model = model
+        self.optimizer = optimizer
+        self.dm = cdu.DataManager(self.FLAGS.data_dir, self.FLAGS.embedding_size)
+        self.loss = torch.nn.CrossEntropyLoss()
+        self.OUTPUT_PATH = FLAGS.ckpt_path + "/" + FLAGS.experiment_name + ".ckpt"
+        self.LOGS_PATH = FLAGS.log_path + "LOGS-" + FLAGS.experiment_name
+        self.OUT_LOGS_PATH = FLAGS.log_path + "OUTPUTS-" + FLAGS.experiment_name
+        self.LOGS = open(self.LOGS_PATH, "a")
+        self.OUT_LOGS = open(self.OUT_LOGS_PATH, "a")
 
     def run_batch(self, source_batch, labels_list, backprop):
         if self.FLAGS.gpu:
             input = source_batch[0].cuda()
         else:
             input = source_batch[0].cpu()
-        one_hot_labels, by_index_labels = self.pad_labels(labels_list, self.model.output_size)
+        one_hot_labels, by_idx_labels = self.pad_labels(labels_list, self.model.output_size)
         if backprop:
             outputs_list = self.model.forward_training(input, one_hot_labels)
-            # outputs_list = self.model.forward_eval(input)
         else:
             outputs_list = self.model.forward_eval(input)
-
         #reshape labels for loss
-        tmp = Variable(torch.zeros(len(outputs_list), len(labels_list), self.model.output_size))
-        # for i in range(len(labels)):
-        #     tmp[i] = labels[i]
-        loss, correct, preds = self.get_metrics(outputs_list, [x.long() for x in by_index_labels])
-
+        loss, correct, guess, wcorrect, wguess = self.get_metrics(outputs_list, [x.long() for x in by_idx_labels])
         if backprop:
             self.backprop(loss)
         if self.FLAGS.gpu:
             loss = loss.cpu()
-
-        return loss, correct, preds
+        return loss, correct, guess, wcorrect, wguess
 
     def pad_labels(self, labels, output_size):
         max_seq_length = max([len(x) for x in labels])
         one_hot = [Variable(torch.zeros(len(labels), output_size)) for _ in range(max_seq_length)]
-        by_index = [Variable(torch.zeros(len(labels))) for _ in range(max_seq_length)]
+        by_idx = [Variable(torch.zeros(len(labels))) for _ in range(max_seq_length)]
         for i, source in enumerate(labels):
             for j in range(len(source)):
                 index = source[j].data[0]
                 one_hot[j][i, index] = 1
-                by_index[j][i] = index
-        return one_hot, by_index
+                by_idx[j][i] = index
+        return one_hot, by_idx
+
+    def get_metrics(self, outputs_list, labels_list):
+        if self.FLAGS.gpu:
+            outputs_list = [output.cuda() for output in outputs_list]
+            labels_list = [label.cuda() for label in labels_list]
+
+        loss = 0
+        total_correct = 0
+        total_guess = 0
+        total_wcorrect = 0
+        total_wguess = 0
+
+        for i in range(len(outputs_list)):
+            # calculate loss
+            logits = torch.log(outputs_list[i])
+            loss += self.loss(logits, labels_list[i])
+
+            # calculate class accuracy
+            pred = logits.data.max(1)[1].cpu()  # get the index of the max log-probability
+            correct = pred.eq(labels_list[i].cpu().data).sum()
+            guess = labels_list[i].size(0)
+
+            total_correct += correct
+            total_guess += guess
+
+            if correct == guess:
+                total_wcorrect += 1
+
+            total_wguess += 1
+
+        return loss, total_correct, total_guess, total_wcorrect, total_wguess
+
+
 
 
     def to_string(self):

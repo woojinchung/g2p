@@ -77,7 +77,9 @@ if __name__ == '__main__':
             hidden_size=FLAGS.hidden_size,
             embedding_size=FLAGS.embedding_size,
             output_size=FLAGS.reduction_size,
-            num_layers=FLAGS.num_layers)
+            num_layers=FLAGS.num_layers,
+            out_seq_len=20
+        )
 
         if FLAGS.gpu:
             cl = cl.cuda()

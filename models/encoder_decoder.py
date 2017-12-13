@@ -35,23 +35,34 @@ class EncoderDecoder(nn.Module):
         self.decoder = nn.LSTMCell(2*hidden_size + output_size, hidden_size)
         self.h2o = nn.Linear(hidden_size, output_size)
 
+
     def forward_training(self, input, labels):
         batch_size = len(input)
         input = torch.transpose(input, 0, 1)
-        encoding, _ = self.encoder(input)
+        hiddens, (h_n, _) = self.encoder(input)
+
+        encoding = hiddens[-1]
+
+        # make encoding by max pooling hidden state of each layer at end of sequence
+        # encoding = F.max_pool1d(torch.transpose(h_n, 0, 2), h_n.size()[0])
+        # encoding = torch.transpose(encoding.squeeze(), 0, 1)
         (h, c) = self.init_hidden_decoder(batch_size)[0]
         outputs = [labels[0]]
         for i, y in enumerate(labels[0:-1]):
-            tmp = torch.cat([encoding[i], y], 1)
+            tmp = torch.cat([encoding, y], 1)        #why do I do I take encoding[i]???
             h, c = self.decoder(tmp, (h, c))
-            output = F.softmax(self.h2o(h))
+            output = F.softmax(self.h2o(h),1)
             outputs.append(output)
         return outputs
 
     def forward_eval(self, input):
         batch_size = len(input)
         input = torch.transpose(input, 0, 1)
-        encoding, _ = self.encoder(input)
+        _, (h_n, _) = self.encoder(input)
+        hiddens, (h_n, _) = self.encoder(input)
+        encoding = hiddens[-1]
+        # encoding = F.max_pool1d(torch.transpose(h_n, 0, 2), h_n.size()[0])
+        # enconing = torch.transpose(encoding.squeeze(), 0, 1)
         (h, c) = self.init_hidden_decoder(batch_size)[0]
         outputs = []
         y = Variable(torch.zeros(batch_size, self.output_size))
@@ -59,9 +70,9 @@ class EncoderDecoder(nn.Module):
             y[i, 0] = 1
         outputs.append(y)
         for i in range(self.out_seq_len-1):
-            tmp = torch.cat([encoding[i], y], 1)
+            tmp = torch.cat([encoding, y], 1)
             h, c = self.decoder(tmp, (h, c))
-            output = F.softmax(self.h2o(h))
+            output = F.softmax(self.h2o(h), 1)
             outputs.append(output)
             y = output
         return outputs

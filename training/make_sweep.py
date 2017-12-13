@@ -45,7 +45,7 @@ FIXED_PARAMETERS = {
     # "embedding_path": "/scratch/asw462/data/bnc-30/embeddings_20000.txt",
     "log_path": ".",
     # "data_type":     "discriminator",
-    "model_type":      "ENC_DEC",
+    "model_type":      "ATTN",
     "ckpt_path":  "checkpoints/",
     # "gpu": "",
 

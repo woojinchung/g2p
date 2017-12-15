@@ -7,10 +7,11 @@ def get_flags():
                          "dir containing train.txt, test.txt, valid.txt")
     gflags.DEFINE_string("log_path", "logs", "")
     gflags.DEFINE_string("data_type", "discriminator", "figure out how to use this")
-    gflags.DEFINE_enum("model_type", "LSTM", ["LSTM", "BiLSTM", "DEEP"], "options: LSTM, BiLSTM, ...")
-    gflags.DEFINE_string("ckpt_path", "./checkpoints", "")
+    gflags.DEFINE_enum("model_type", "LSTM", ["LSTM", "BiLSTM", "DEEP"], "options: LSTM, BiLSTM, DEEP, ...")
+    gflags.DEFINE_string("ckpt_path", "checkpoints", "")
     gflags.DEFINE_boolean("gpu", False, "set to false on local")
     gflags.DEFINE_string("experiment_name", "", "")
+    gflags.DEFINE_boolean("evaluate_only", False, "")
 
     #sizes
     gflags.DEFINE_integer("embedding_size", 44, "hardcoded for simplicity")
@@ -19,16 +20,16 @@ def get_flags():
 
     #chunks
     gflags.DEFINE_integer("stages_per_epoch",
-                          100,
+                          40,
                           "how many eval/stats steps per epoch?")
     gflags.DEFINE_integer("prints_per_stage",
                           1,
                           "how often to print stats to stdout during epoch")
     gflags.DEFINE_integer("convergence_threshold",
-                          20,
+                          50,
                           "how many eval steps before early stop")
     gflags.DEFINE_integer("max_epochs",
-                          10,
+                          100,
                           "number of epochs before stop, essentially unreachable")
     gflags.DEFINE_integer("batch_size", 64, "")
 

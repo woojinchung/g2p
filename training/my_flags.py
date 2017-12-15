@@ -15,7 +15,7 @@ def get_flags():
 
     #sizes
     gflags.DEFINE_integer("embedding_size", 44, "hardcoded for simplicity")
-    gflags.DEFINE_integer("reduction_size", 70, "hardcoded for simplicity")
+    gflags.DEFINE_integer("reduction_size", 40, "hardcoded for simplicity")
     gflags.DEFINE_integer("crop_pad_length", 30, "")
 
     #chunks

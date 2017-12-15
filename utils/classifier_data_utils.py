@@ -44,7 +44,7 @@ class CorpusEpoch:
         # create a Variable of size [batch_size x max_seq_length x emb_dim]
         batch_size = len(source_batch_list)
         max_seq_length = len(source_batch_list[0])
-        emb_dim = self.data_manager.input_lang.n_symbols
+        emb_dim = len(source_batch_list[0][0])
 
         source_batch = Variable(torch.zeros(batch_size, max_seq_length, emb_dim))
 

@@ -66,6 +66,9 @@ class EncoderDecoderWithAttention(enc_dec.EncoderDecoder):
         in_seq_len = input.size()[0]
         hiddens, _ = self.encoder(input)
         (h, c) = self.init_hidden_decoder(batch_size)[0]
+        if self.gpu:
+            h = h.cuda()
+            c = c.cuda()
 
         #the first output needs to fabricated as the start symbol
         outputs = []
@@ -75,6 +78,9 @@ class EncoderDecoderWithAttention(enc_dec.EncoderDecoder):
         outputs.append(y)
         for i in range(self.out_seq_len-1):
             # get encoding using attention
+            if self.gpu:
+                y = y.cuda()
+                
             tmp = torch.cat([
                 y.expand(in_seq_len, batch_size, self.output_size),
                 h.expand(in_seq_len, batch_size, self.hidden_size),

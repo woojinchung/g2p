@@ -65,7 +65,8 @@ if __name__ == '__main__':
             embedding_size=FLAGS.embedding_size,
             output_size=FLAGS.reduction_size,
             num_layers=FLAGS.num_layers,
-            out_seq_len=20)
+            out_seq_len=20,
+            gpu=FLAGS.gpu)
         optimizer = torch.optim.Adam(cl.parameters(), lr=FLAGS.learning_rate)
         if FLAGS.gpu:
             cl = cl.cuda()
@@ -79,7 +80,9 @@ if __name__ == '__main__':
             embedding_size=FLAGS.embedding_size,
             output_size=FLAGS.reduction_size,
             num_layers=FLAGS.num_layers,
-            out_seq_len=20)
+            out_seq_len=20,
+            gpu=FLAGS.gpu
+        )
         optimizer = torch.optim.Adam(cl.parameters(), lr=FLAGS.learning_rate)
         if FLAGS.gpu:
             cl = cl.cuda()

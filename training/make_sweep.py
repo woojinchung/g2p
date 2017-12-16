@@ -67,6 +67,7 @@ FIXED_PARAMETERS = {
 # Tunable parameters.
 SWEEP_PARAMETERS = {
 
+    "embedding_size": ("embedding", QUAD, 50, 300),
     "hidden_size": ("h_size", QUAD, 225, 1600),
     "num_layers": ("num_layers", LIN, 1, 4),
     "learning_rate": ("lr", EXP, 0.00005, 0.05),

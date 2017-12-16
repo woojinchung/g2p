@@ -43,6 +43,7 @@ class ModelTrainer(object):
     def print_stats(self, loss):
         # print("avg loss\t" + self.my_round(loss))
         print("avg loss:\t" + str(loss.data.numpy()[0]))
+        self.LOGS.write("avg loss:\t" + str(loss.data.numpy()[0]) + "\n")
 
     def logs(self, n_batches, train_avg_loss, valid_avg_loss, t_confusion, v_confusion, model_saved):
         self.LOGS.write("\t" + str(n_batches) + "\t")
@@ -85,7 +86,7 @@ class ModelTrainer(object):
 
         for i in range(len(outputs_list)):
             # calculate loss
-            logits = F.log_softmax(outputs_list[i])
+            logits = F.log_softmax(outputs_list[i], 1)
             loss += self.loss(logits, labels_list[i])
 
             # calculate class accuracy
@@ -158,6 +159,7 @@ class ModelTrainer(object):
 
         print "phoneme class_acc:\t" + str(class_acc)
         print "word class_acc:\t" + str(wclass_acc)
+        self.LOGS.write("phoneme class_acc:\t" + str(class_acc) + "\n" + "word class_acc:\t" + str(wclass_acc) + "\n")
 
         return stage_loss/n_batches, class_acc
 
@@ -169,8 +171,10 @@ class ModelTrainer(object):
             #     raise NotConvergingError
             n_stages += 1
             print("-------------training-------------")
+            self.LOGS.write("-------------training-------------" + "\n")
             train_loss, train_acc = self.run_stage(train, True, self.FLAGS.stages_per_epoch, self.FLAGS.prints_per_stage)
             print("-------------validation-------------")
+            self.LOGS.write("-------------validation-------------" + "\n")
             valid = cdu.CorpusEpoch(self.dm.valid_pairs, self.dm, self.FLAGS.batch_size)
             valid_loss, valid_acc, wvalid_acc = self.evaluate(valid)
 
@@ -193,6 +197,7 @@ class ModelTrainer(object):
                     recursively_set_device(self.optimizer.state_dict(), gpu=0)
 
                 print "Checkpointing with new best dev accuracy of " + str(valid_acc)
+                self.LOGS.write("Checkpointing with new best dev accuracy of " + str(valid_acc))
             else:
                 n_stages_not_converging += 1
 
@@ -223,6 +228,8 @@ class ModelTrainer(object):
         self.print_stats(avg_loss)
         print "phoneme class_acc:\t" + str(class_acc)
         print "word class_acc:\t" + str(wclass_acc)
+        self.LOGS.write("phoneme class_acc:\t" + str(class_acc) + "\n" + "word class_acc:\t" + str(wclass_acc) + "\n")
+        self.LOGS.flush()
 
         return avg_loss, class_acc, wclass_acc
 
@@ -232,9 +239,6 @@ class ModelTrainer(object):
         print("======================================================================")
         print(self.to_string())
         self.LOGS.write("\n\n" + self.to_string() + "\n")
-        self.LOGS.write(
-            "# batches | train avg loss | valid avg loss | t matthews | v matthews | t f1 | v f1 |      confusion      |model saved\n" +
-            "----------|----------------|----------------|------------|------------|------|------|---------------------|-----------\n")
         self.LOGS.flush()
 
 

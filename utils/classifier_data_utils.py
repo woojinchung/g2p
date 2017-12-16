@@ -75,7 +75,7 @@ class DataManager:
         self.training_pairs = None
         self.valid_pairs = None
         self.test_pairs = None
-        self.emb = torch.nn.Embedding(44, embedding_size)
+        self.emb = torch.nn.Embedding(29, embedding_size)
 
         self.preprocess_data()
 

@@ -71,10 +71,10 @@ class DeepClassifier(nn.Module):
         self.embedding_size = embedding_size
         self.num_layers = num_layers
         self.reduction_size = reduction_size
-        self.lstm = nn.LSTM(embedding_size, hidden_size/2, num_layers=num_layers, bidirectional=False)
-        self.bilstm = nn.LSTM(embedding_size, hidden_size/4, num_layers=num_layers, bidirectional=True)
-        self.deeplstm = nn.LSTM(hidden_size, hidden_size, num_layers=num_layers, bidirectional=False)
-        self.h2r = nn.Linear(hidden_size, reduction_size)
+        self.lstm = nn.LSTM(embedding_size, hidden_size, num_layers=num_layers, bidirectional=False)
+        self.bilstm = nn.LSTM(embedding_size, hidden_size/2, num_layers=num_layers, bidirectional=True)
+        self.deeplstm = nn.LSTM(hidden_size*2, hidden_size/4, num_layers=num_layers, bidirectional=False)
+        self.h2r = nn.Linear(hidden_size/4, reduction_size)
 
     def forward(self, input, input_lengths):
         batch_size = len(input)

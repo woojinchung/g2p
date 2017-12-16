@@ -42,6 +42,8 @@ class EncoderDecoderWithAttention(enc_dec.EncoderDecoder):
         outputs = [labels[0]]
         for i, y in enumerate(labels[0:-1]):
             # get encoding using attention
+            if self.gpu:
+                y = y.cuda()
 
             tmp = torch.cat([
                 y.expand(in_seq_len, batch_size, self.output_size),

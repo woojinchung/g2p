@@ -25,7 +25,7 @@ FLAGS = gflags.FLAGS
 gflags.DEFINE_string("data_dir", "cmu/no_stress/", "")
 # gflags.DEFINE_string("vocab_path", "/scratch/asw462/data/bnc-30/vocab_20000.txt", "")
 # gflags.DEFINE_string("embedding_path", "/scratch/asw462/data/bnc-30/embeddings_20000.txt", "")
-gflags.DEFINE_string("log_path", "/scratch/asw462/logs/", "")
+gflags.DEFINE_string("log_path", "/logs/", "")
 
 FLAGS(sys.argv)
 
@@ -55,7 +55,7 @@ FIXED_PARAMETERS = {
 
 
     #chunks
-    "stages_per_epoch": "5",
+    "stages_per_epoch": "100",
     "prints_per_stage": "5",
     "convergence_threshold": "20",
     "max_epochs": "100",
@@ -155,4 +155,9 @@ for run_id in range(SWEEP_RUNS):
 
     flags += " --experiment_name " + name
 
-    print "cd ~/Workspace/g2p; python -m training.run_training " + flags
+    if SINGLE_DAY:
+        print "cd ~/g2p; python -m training.run_training" + flags
+    else:
+        print "export FLAGS=\"" + flags + "\""
+        print "cd ~/g2p; sbatch my_sweep.sbatch"
+    print

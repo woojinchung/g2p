@@ -146,11 +146,9 @@ class EDTrainer(model_trainer.ModelTrainer):
             labels_list = [label.cuda() for label in labels_list]
 
         loss = 0
-        total_correct = 0
-        total_guess = 0
-        total_wcorrect = 0
-        total_wguess = 0
 
+        correct_list = []
+        trivial = 0
         for i in range(len(outputs_list)):
             # calculate loss
             logits = torch.log(outputs_list[i])
@@ -158,16 +156,20 @@ class EDTrainer(model_trainer.ModelTrainer):
 
             # calculate class accuracy
             pred = logits.data.max(1)[1].cpu()  # get the index of the max log-probability
-            correct = pred.eq(labels_list[i].cpu().data).sum()
-            guess = labels_list[i].size(0)
+            correct = pred.eq(labels_list[i].cpu().data)
+            for p, l in zip(pred, labels_list[i].cpu().data):
+                if p == l and (p == 0 or p == 1):
+                    trivial += 1
+            correct_list.append(correct)
 
-            total_correct += correct
-            total_guess += guess
-
-            if correct == guess:
+        correct_list = sum(correct_list)
+        total_correct = sum(correct_list) - trivial
+        total_guess = len(labels_list) * len(labels_list[0]) - trivial
+        total_wguess = self.FLAGS.batch_size
+        total_wcorrect = 0
+        for i in correct_list:
+            if i == len(labels_list):
                 total_wcorrect += 1
-
-            total_wguess += 1
 
         return loss, total_correct, total_guess, total_wcorrect, total_wguess
 

@@ -39,35 +39,35 @@ training_set = lines[12000+2760:106837+2760+12000]
 
 #save
 
-thefile = open('letter_only_with_stress/test_set.txt', 'w', encoding='latin-1')
-for item in test_set_stress:
-    thefile.write("%s\n" % item)
-thefile.close()
+#thefile = open('letter_only_with_stress/test_set.txt', 'w', encoding='latin-1')
+#for item in test_set_stress:
+#    thefile.write("%s\n" % item)
+#thefile.close()
 
-thefile = open('letter_only_with_stress/dev_set.txt', 'w', encoding='latin-1')
-for item in dev_set_stress:
-    thefile.write("%s\n" % item)
-thefile.close()
+#thefile = open('letter_only_with_stress/dev_set.txt', 'w', encoding='latin-1')
+#for item in dev_set_stress:
+#    thefile.write("%s\n" % item)
+#thefile.close()
 
-thefile = open('letter_only_with_stress/train_set.txt', 'w', encoding='latin-1')
-for item in training_set_stress:
-    thefile.write("%s\n" % item)
-thefile.close()
+#thefile = open('letter_only_with_stress/train_set.txt', 'w', encoding='latin-1')
+#for item in training_set_stress:
+#    thefile.write("%s\n" % item)
+#thefile.close()
 
-thefile = open('letter_only_no_stress/test_set.txt', 'w', encoding='latin-1')
-for item in test_set:
-    thefile.write("%s\n" % item)
-thefile.close()
+#thefile = open('letter_only_no_stress/test_set.txt', 'w', encoding='latin-1')
+#for item in test_set:
+#    thefile.write("%s\n" % item)
+#thefile.close()
 
-thefile = open('letter_only_no_stress/dev_set.txt', 'w', encoding='latin-1')
-for item in dev_set:
-    thefile.write("%s\n" % item)
-thefile.close()
+#thefile = open('letter_only_no_stress/dev_set.txt', 'w', encoding='latin-1')
+#for item in dev_set:
+#    thefile.write("%s\n" % item)
+#thefile.close()
 
-thefile = open('letter_only_no_stress/train_set.txt', 'w', encoding='latin-1')
-for item in training_set:
-    thefile.write("%s\n" % item)
-thefile.close()
+#thefile = open('letter_only_no_stress/train_set.txt', 'w', encoding='latin-1')
+#for item in training_set:
+#    thefile.write("%s\n" % item)
+#thefile.close()
 
 
 

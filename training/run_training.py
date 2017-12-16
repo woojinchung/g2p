@@ -67,6 +67,8 @@ if __name__ == '__main__':
             num_layers=FLAGS.num_layers,
             out_seq_len=20)
         optimizer = torch.optim.Adam(cl.parameters(), lr=FLAGS.learning_rate)
+        if FLAGS.gpu:
+            cl = cl.cuda()
         clt = models.encoder_decoder.EDTrainer(
             FLAGS,
             model=cl,
@@ -79,6 +81,8 @@ if __name__ == '__main__':
             num_layers=FLAGS.num_layers,
             out_seq_len=20)
         optimizer = torch.optim.Adam(cl.parameters(), lr=FLAGS.learning_rate)
+        if FLAGS.gpu:
+            cl = cl.cuda()
         clt = models.encoder_decoder.EDTrainer(
             FLAGS,
             model=cl,

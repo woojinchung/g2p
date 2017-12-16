@@ -25,9 +25,10 @@ def time_since(since):
 START_TIME = time.time()
 
 class EncoderDecoderWithAttention(enc_dec.EncoderDecoder):
-    def __init__(self, hidden_size, embedding_size, output_size, num_layers, out_seq_len):
-        super(EncoderDecoderWithAttention, self).__init__(hidden_size, embedding_size, output_size, num_layers, out_seq_len)
+    def __init__(self, hidden_size, embedding_size, output_size, num_layers, out_seq_len, gpu):
+        super(EncoderDecoderWithAttention, self).__init__(hidden_size, embedding_size, output_size, num_layers, out_seq_len, gpu)
         self.attention = nn.Linear(3*hidden_size + output_size, 1)
+        self.gpu = gpu
 
     def forward_training(self, input, labels):
         batch_size = len(input)
@@ -35,9 +36,13 @@ class EncoderDecoderWithAttention(enc_dec.EncoderDecoder):
         in_seq_len = input.size()[0]
         hiddens, _ = self.encoder(input)
         (h, c) = self.init_hidden_decoder(batch_size)[0]
+        if self.gpu:
+            h = h.cuda()
+            c = c.cuda()
         outputs = [labels[0]]
         for i, y in enumerate(labels[0:-1]):
             # get encoding using attention
+
             tmp = torch.cat([
                 y.expand(in_seq_len, batch_size, self.output_size),
                 h.expand(in_seq_len, batch_size, self.hidden_size),

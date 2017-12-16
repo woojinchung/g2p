@@ -24,7 +24,7 @@ def time_since(since):
 START_TIME = time.time()
 
 class EncoderDecoder(nn.Module):
-    def __init__(self, hidden_size, embedding_size, output_size, num_layers, out_seq_len):
+    def __init__(self, hidden_size, embedding_size, output_size, num_layers, out_seq_len, gpu=False):
         super(EncoderDecoder, self).__init__()
         self.hidden_size = hidden_size
         self.embedding_size = embedding_size

@@ -255,6 +255,10 @@ class ModelTrainer(object):
                     print("===========================EPOCH %d=============================" % n_epoch)
                     n_stages_not_converging, n_stages, best_dev_err = self.run_epoch(n_stages_not_converging, n_epoch, n_stages, best_dev_err)
                     n_epoch += 1
+
+                print("=====================TEST==================")
+                test = cdu.CorpusEpoch(self.dm.test_pairs, self.dm, self.FLAGS.batch_size)
+                test_loss, test_acc, wtest_acc = self.evaluate(test)
             except KeyboardInterrupt:
                 print "\nSO LONG, AND THANKS FOR ALL THE FISH"
             finally:
